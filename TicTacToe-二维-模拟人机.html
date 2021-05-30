@@ -1,0 +1,261 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="utf-8">
+  <title>tictactoe</title>
+
+  <style>
+    .cell {
+      width: 100px;
+      height: 100px;
+      
+      background-color: green;
+      border:1px solid white;
+
+      display: inline-block;
+      text-align: center;
+      vertical-align:middle;
+      line-height: 100px;
+      font-size: 50px;
+    }
+  </style>
+</head>
+
+<body>
+  <div id="board"></div>
+
+  <script>
+      //棋盘表示
+      let pattern = [
+          [0,0,0],
+          [0,1,0],
+          [0,0,0]
+      ];
+      let COLOR = 2;
+
+        /**
+         * 绘制棋盘
+         * @param {Array} pattern 棋盘数据
+         * @param {Number} color 棋子代号 1代表⭕️2代表❌
+        */
+      function show(pattern){
+          let board = document.getElementById('board')
+              board.innerText = ""
+          for(let i = 0;i < 3;i++){
+              for(let j = 0;j < 3;j++){
+                  let cell = document.createElement("div")
+                  cell.classList.add("cell")
+                  cell.innerText = pattern[i][j]==2?"❌": pattern[i][j]==1?"⭕️":"";
+                  cell.addEventListener('click',(e)=>userMove(e,i,j))
+                  board.appendChild(cell)
+              }
+              board.appendChild(document.createElement("br"))
+          }
+      }
+      show(pattern)
+      console.log(bestChoice(pattern,COLOR))
+
+      /**
+         * 下棋
+         * @param {Number} x 纵轴
+         * @param {Number} y 横轴
+         * @param {Number} color 棋子代号 1代表⭕️2代表❌
+        */
+      function userMove(e,x,y){
+        if(pattern[x][y]) return
+          //给点击的位置赋值
+          pattern[x][y] = COLOR;
+          //检查输赢
+          if(check(pattern,COLOR)){
+              alert(COLOR == 2?"❌ is winner!":COLOR==1?"⭕️ is winner!":"")
+          }
+        //   if(willWin(pattern,COLOR)){
+        //       console.log(COLOR == 2?"❌ will win!":COLOR==1?"⭕️ will win!":"")
+        //   }
+          //展示棋盘
+          show(pattern)
+          
+          //变色
+          COLOR = 3 - COLOR;
+          console.log(bestChoice(pattern,COLOR))
+          //电脑下棋
+           computerMove(pattern)
+      }
+
+      function computerMove(pattern){
+          let choice = bestChoice(pattern,COLOR)
+          if(choice.point){
+              pattern[choice.point[0]][choice.point[1]]  = COLOR
+          }
+          //检查是否要赢
+          if(check(pattern,COLOR)){
+              alert(COLOR == 2?"❌ is winner!":COLOR==1?"⭕️ is winner!":"")
+          }
+       
+          show(pattern)
+          COLOR = 3 - COLOR;
+      }
+
+
+      /**
+         * 检查输赢
+         * @param {Array} pattern 棋盘数据
+         * @param {Number} color 棋子代号 1代表⭕️2代表❌
+        **/
+      function check(pattern,color){
+        //一横轴都等于落子，则落子代表的color赢
+        {
+            for(let i = 0;i < 3;i++){
+                let win = true;
+                for(let j = 0;j < 3;j++){
+                    if(pattern[j][i] !== color){
+                        win = false
+                        break
+                    }
+                }
+                if(win){
+                    return win
+                }
+            }
+        }
+        
+        
+        //一纵轴都等于落子，则落子代表的color赢
+        {
+            for(let i = 0;i < 3;i++){
+                let win = true;
+                for(let j = 0;j < 3;j++){
+                    if(pattern[i][j] !== color){
+                        win = false
+                        break
+                    }
+                }
+                if(win){
+                    return win
+                }
+            }
+        }
+
+        //对角轴1都等于落子，则落子代表的color赢
+        {
+            let win = true;
+            for(let i = 0;i < 3;i++){
+                if(pattern[i][i] !== color){
+                    win = false
+                    break
+                }
+            }
+            if(win){
+                return win
+            }
+        }
+        //对角轴2
+        {
+            let win = true;
+            for(let i = 0;i < 3;i++){
+                if(pattern[i][2-i] !== color){
+                    win = false
+                    break
+                }
+            }
+            if(win){
+                return win
+            }
+        }
+      return false
+    }
+
+      /**
+         * 是否将要赢
+         * @param {Array} pattern 棋盘数据
+         * @param {Number} color 棋子代号 1代表⭕️2代表❌
+        **/
+      function willWin(pattern,color){
+            for(let i = 0;i < 3;i++){
+                for(let j = 0;j < 3;j++){
+                    if(pattern[i][j]){
+                        continue;
+                    }
+                    let tmp = clone(pattern)
+                    tmp[i][j] = color
+                    if(check(tmp,color)){
+                        // return true
+                        return [i,j]
+                    }
+                }
+            }
+            // return false
+            return null
+      }
+
+      /**
+         * 克隆棋盘
+         * @param {Array} pattern 棋盘数据
+        **/
+      function clone(pattern){
+        return JSON.parse(JSON.stringify(pattern))
+      }
+
+      /**
+         * 找到最佳结果:以现在的局面最终谁会赢
+         *
+         *   - 结果是 -1 就是最后会输
+         *   - 结果是  1 就是最后会赢
+         *   - 结果是  0 就是最后会和
+         *
+         * @param {Array} pattern 棋盘数据
+         * @param {Number} color 棋子代号 1代表⭕️2代表❌
+        */
+        //bestChoice实现的关键思路:找到我们所有点里面让对方面临最差局面的点
+        //bestChoice实现思路可描述为
+        //1.上一个玩家落子后，模拟下一个玩家所有可能走的位置;比如tmp[0][0] = 1；遍历tmp[0][2],tmp[1][0],tmp[1][2],tmp[2][0],tmp[2][1],tmp[2][2] = 2
+        //2.模拟下一个玩家走后的结果
+        //3.如果有一个格子放入棋子后会赢的话，此棋子方赢
+        //4.返回result(1,0或-1),point(下一个玩家走的位置)
+      function bestChoice(pattern,color){
+          let point = willWin(pattern,color)
+          if(point){
+              return {
+                  point:point,
+                  result:1
+              }
+          }
+
+          let result = -1;
+          outer:for(let i = 0;i < 3;i++){
+              for(let j = 0;j < 3;j++){
+                  //跳过已经有棋子的地方
+                  if(pattern[i][j]){
+                      continue;
+                  }
+                  //克隆当前棋盘
+                  let tmp = clone(pattern);
+                  //模拟棋子落在此位置
+                  tmp[i][j] = color
+                  
+                  //获取我们下了这个棋子后对手的最佳结果
+                  let best = bestChoice(tmp,3 - color);
+                  let r = best.result;
+                  
+                  //存储最佳结果
+                  if(-r >= result){
+                     result = -r;
+                     point = [i,j]
+                  }
+
+                  if(result == 1){
+                      break outer;
+                  }
+              }
+          }
+          
+            return{
+                point:point, 
+                result:point?result:0
+            }
+      }
+  </script>
+</body>
+
+</html>
